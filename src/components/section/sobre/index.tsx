@@ -11,7 +11,7 @@ export default function Sobre() {
                     <div className="order-2 md:order-1">
                         <h2 className="text-[30px] font-[600]">Lorem ipsum dolor sit amet,</h2>
                         <p className="text-[18px] mt-[15px]">
-                            Lorem e aliqugeam. Lfgrgrorem ipsum dolor sit amet consectetur adipisicinarchitece nemo provident officiis cumque ex quidem enim cum blanditiis possimus commodi! elit. Accusantium at eum doloremque sapiente voluptatum assumenda, quidem accusamus. Nemo perspiciatis illum quam eum expedita doloribus aperiam? Accusantium laudantium ad assumenda iure....
+                            Lorem e alifwfawaffaqugeam. Lfgrgrorem ipsum dolor sit amet consectetur adipisicinarchitece nemo provident officiis cumque ex quidem enim cum blanditiis possimus commodi! elit. Accusantium at eum doloremque sapiente voluptatum assumenda, quidem accusamus. Nemo perspiciatis illum quam eum expedita doloribus aperiam? Accusantium laudantium ad assumenda iure....
                         </p>
                       
                     </div>
