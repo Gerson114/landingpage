@@ -1,4 +1,4 @@
-'use client'
+
 import Image from "next/image"
 import img from "../../../img/img_sess/2885174.jpg"
 

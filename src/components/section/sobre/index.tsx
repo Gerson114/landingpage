@@ -1,4 +1,4 @@
-'use client'
+
 
 import Image from "next/image"
 import img from "../../../img/img_sess/img-site-nos.jpg"
@@ -11,7 +11,7 @@ export default function Sobre() {
                     <div className="order-2 md:order-1">
                         <h2 className="text-[30px] font-[600]">Lorem ipsum dolor sit amet,</h2>
                         <p className="text-[18px] mt-[15px]">
-                            Lorem e aliquam. Lorem ipsum dolor sit amet consectetur adipisicinarchitece nemo provident officiis cumque ex quidem enim cum blanditiis possimus commodi! elit. Accusantium at eum doloremque sapiente voluptatum assumenda, quidem accusamus. Nemo perspiciatis illum quam eum expedita doloribus aperiam? Accusantium laudantium ad assumenda iure....
+                            Lorem e aliquam. Lforem ipsum dolor sit amet consectetur adipisicinarchitece nemo provident officiis cumque ex quidem enim cum blanditiis possimus commodi! elit. Accusantium at eum doloremque sapiente voluptatum assumenda, quidem accusamus. Nemo perspiciatis illum quam eum expedita doloribus aperiam? Accusantium laudantium ad assumenda iure....
                         </p>
                       
                     </div>
