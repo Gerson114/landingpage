@@ -22,7 +22,7 @@ export default function Produtos() {
                         <div className="px-[30px]">
                             <h2 className="text-center text-[20px] mt-[15px]">lorem lorem ipusm</h2>
 
-                            <p className="mt-[15px]">Lorem ipsum dolor sit amet ostrum possimus accusamus? Eligendi recusandae mollitia accusantium incidunt minus et rem ducimus, a quasi assumenda commodi!</p>
+                            <p className="mt-[15px]">Lorem ipsum dolor sit aghmet ostrum possimus accusamus? Eligendi recusandae mollitia accusantium incidunt minus et rem ducimus, a quasi assumenda commodi!</p>
 
                             <button className="bg-[#01A1FF] text-white w-full mt-[15px] py-[5px] rounded-[6px]" > lorem</button>
                         </div>
