@@ -12,6 +12,7 @@ interface Reserva {
 interface UserAgrupado {
   nome: string;
   email: string;
+  telefone?: string;
   reservas: Reserva[];
   totalHoras: number;
   valorTotal: number;
@@ -20,76 +21,80 @@ interface UserAgrupado {
 export default function UsersPage() {
   const [users, setUsers] = useState<UserAgrupado[]>([]);
   const [loading, setLoading] = useState(true);
-  const [erro, setErro] = useState(false);
-  const [deletando, setDeletando] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [deletandoEmail, setDeletandoEmail] = useState<string | null>(null);
 
   useEffect(() => {
-    carregarDados();
+    fetchUsers();
   }, []);
 
-  const carregarDados = async () => {
+  async function fetchUsers() {
     setLoading(true);
-    setErro(false);
+    setError(null);
 
     try {
       const res = await fetch('http://localhost:3000/users');
-      if (!res.ok) throw new Error('Erro na resposta da API');
+      if (!res.ok) throw new Error(`API error: ${res.status}`);
 
       const data = await res.json();
       const agrupados = agruparPorUsuario(data);
       setUsers(agrupados);
-    } catch (err) {
-      setErro(true);
+    } catch (err: any) {
+      setError(err.message || 'Erro ao carregar dados');
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const agruparPorUsuario = (reservas: any[]): UserAgrupado[] => {
+  function agruparPorUsuario(reservas: any[]): UserAgrupado[] {
     const mapa = new Map<string, UserAgrupado>();
 
     reservas.forEach((item) => {
-      if (!mapa.has(item.email)) {
-        mapa.set(item.email, {
-          nome: item.name,
-          email: item.email,
+      const email = item.email;
+      if (!email) return; // ignora se não tem email
+
+      if (!mapa.has(email)) {
+        mapa.set(email, {
+          nome: item.name || 'Sem nome',
+          email,
+          telefone: item.telefone || item.phone || '',
           reservas: [],
           totalHoras: 0,
           valorTotal: 0,
         });
       }
 
-      const user = mapa.get(item.email)!;
+      const user = mapa.get(email)!;
       user.reservas.push({
         id: item.id,
         horario: item.horario,
         data: item.data,
         valor: item.valor,
       });
-
       user.totalHoras += 1;
       user.valorTotal += item.valor;
     });
 
     return Array.from(mapa.values());
-  };
+  }
 
-  const formatHorario = (h: number) => `${h.toString().padStart(2, '0')}:00`;
+  function formatHorario(hora: number) {
+    return `${hora.toString().padStart(2, '0')}:00`;
+  }
 
-  const intervaloHoras = (reservas: Reserva[]) => {
-    const horarios = reservas.map(r => r.horario).sort((a, b) => a - b);
+  function intervaloHoras(reservas: Reserva[]) {
+    const horarios = reservas.map((r) => r.horario).sort((a, b) => a - b);
     return {
-      inicio: formatHorario(horarios[0]),
-      fim: formatHorario(horarios[horarios.length - 1]),
+      inicio: horarios.length > 0 ? formatHorario(horarios[0]) : '--:--',
+      fim: horarios.length > 0 ? formatHorario(horarios[horarios.length - 1]) : '--:--',
     };
-  };
+  }
 
-  const deletarUsuario = async (nome: string, email: string) => {
-    const confirmar = confirm(`Tem certeza que deseja deletar ${nome}?`);
-    if (!confirmar) return;
+  async function deletarUsuario(nome: string, email: string) {
+    if (!confirm(`Tem certeza que deseja deletar ${nome}?`)) return;
 
     try {
-      setDeletando(email);
+      setDeletandoEmail(email);
 
       const res = await fetch('http://localhost:3000/auth/cancel', {
         method: 'POST',
@@ -98,108 +103,168 @@ export default function UsersPage() {
       });
 
       const data = await res.json();
+
       if (!res.ok) throw new Error(data.message || 'Erro ao deletar usuário');
 
-      alert(data.message);
-      await carregarDados();
-    } catch {
-      alert('Erro ao deletar usuário');
+      alert(data.message || 'Usuário deletado com sucesso');
+      await fetchUsers();
+    } catch (err: any) {
+      alert(err.message || 'Erro ao deletar usuário');
     } finally {
-      setDeletando(null);
+      setDeletandoEmail(null);
     }
-  };
+  }
 
-  if (loading) return <p className="text-center py-8 text-gray-500">🔄 Carregando...</p>;
-  if (erro) return <p className="text-center py-8 text-red-600 font-semibold">Erro ao carregar os dados.</p>;
+  if (loading)
+    return (
+      <p className="text-center py-8 text-gray-500">🔄 Carregando...</p>
+    );
+
+  if (error)
+    return (
+      <p className="text-center py-8 text-red-600 font-semibold">
+        {error}
+      </p>
+    );
+
+  if (users.length === 0)
+    return (
+      <p className="text-center py-8 text-gray-500">
+        Nenhuma reserva encontrada.
+      </p>
+    );
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6 border-b pb-2 text-gray-800">📋 Reservas por Usuário</h1>
+      <h1 className="text-3xl font-bold mb-6 border-b pb-2 text-gray-800">
+        📋 Reservas por Usuário
+      </h1>
 
-      {users.length === 0 ? (
-        <p className="text-center text-gray-500 mt-12">Nenhuma reserva encontrada.</p>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {users.map(user => (
-            <div key={user.email} className="bg-white rounded-lg shadow-md p-6 flex flex-col justify-between">
-              <div>
-                <h2 className="text-lg font-bold text-gray-800 mb-1">👤 {user.nome}</h2>
-                <p className="text-sm text-gray-500">{user.email}</p>
-                <p className="text-sm text-gray-400 mb-4">
-                  📅 {new Date(user.reservas[0]?.data).toLocaleDateString('pt-BR')}
-                </p>
-
-                <div className="grid grid-cols-3 gap-3 text-center mb-4">
-                  <StatCard label="Horas" value={`${user.totalHoras}h`} color="green" />
-                  <StatCard
-                    label="Total"
-                    value={`R$ ${user.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-                    color="yellow"
-                  />
-                  <StatCard
-                    label="Intervalo"
-                    value={`${intervaloHoras(user.reservas).inicio} – ${intervaloHoras(user.reservas).fim}`}
-                    color="blue"
-                  />
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {users.map((user, idx) => (
+          <div
+            key={user.email}
+            className="bg-white rounded-lg shadow-lg p-6 flex flex-col justify-between border-2 border-gray-200 hover:border-indigo-500 transition"
+          >
+            <div>
+              <div className="flex items-center mb-4">
+                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-indigo-600 text-white font-extrabold text-2xl mr-4 select-none">
+                  {idx + 1}
                 </div>
-
-                <div className="flex flex-wrap gap-2">
-                  {user.reservas
-                    .sort((a, b) => a.horario - b.horario)
-                    .map((r) => (
-                      <span
-                        key={r.id}
-                        title={`Dia ${new Date(r.data).toLocaleDateString()} às ${formatHorario(r.horario)}`}
-                        className="bg-indigo-100 text-indigo-900 px-3 py-1 rounded-full text-sm font-medium"
-                      >
-                        {formatHorario(r.horario)}
-                      </span>
-                    ))}
+                <div>
+                  <h2 className="text-2xl font-extrabold text-gray-900 leading-tight">
+                    👤 {user.nome}
+                  </h2>
+                  <p
+                    className="text-md font-semibold text-indigo-700 truncate max-w-xs"
+                    title={user.email}
+                  >
+                    {user.email}
+                  </p>
+                  {user.telefone && (
+                    <p
+                      className="text-md font-semibold text-indigo-600 mt-1 select-text"
+                      title={user.telefone}
+                    >
+                      📞 {user.telefone}
+                    </p>
+                  )}
                 </div>
               </div>
 
-              <button
-                onClick={() => deletarUsuario(user.nome, user.email)}
-                disabled={deletando === user.email}
-                className={`mt-4 py-2 px-4 rounded text-sm font-semibold transition ${
-                  deletando === user.email
-                    ? 'bg-red-200 text-red-700 cursor-wait'
-                    : 'bg-red-100 text-red-800 hover:bg-red-200'
-                }`}
-              >
-                {deletando === user.email ? 'Deletando...' : '🗑 Deletar'}
-              </button>
+              <p className="text-base text-gray-600 font-semibold mb-6">
+                📅{' '}
+                {new Date(user.reservas[0]?.data).toLocaleDateString('pt-BR', {
+                  day: '2-digit',
+                  month: 'long',
+                  year: 'numeric',
+                })}
+              </p>
+
+              <div className="grid grid-cols-3 gap-5 text-center mb-6">
+                <StatCard label="Horas" value={`${user.totalHoras}h`} color="green" />
+                <StatCard
+                  label="Total"
+                  value={`R$ ${user.valorTotal.toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2,
+                  })}`}
+                  color="yellow"
+                />
+                <StatCard
+                  label="Intervalo"
+                  value={`${intervaloHoras(user.reservas).inicio} – ${intervaloHoras(user.reservas).fim}`}
+                  color="blue"
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                {user.reservas
+                  .sort((a, b) => a.horario - b.horario)
+                  .map((r) => (
+                    <span
+                      key={r.id}
+                      title={`Dia ${new Date(r.data).toLocaleDateString()} às ${formatHorario(
+                        r.horario
+                      )}`}
+                      className="bg-indigo-300 text-indigo-900 px-5 py-2 rounded-full text-sm font-semibold shadow-md select-none"
+                    >
+                      {formatHorario(r.horario)}
+                    </span>
+                  ))}
+              </div>
             </div>
-          ))}
-        </div>
-      )}
+
+            <button
+              onClick={() => deletarUsuario(user.nome, user.email)}
+              disabled={deletandoEmail === user.email}
+              className={`mt-8 py-3 px-6 rounded-lg text-sm font-semibold transition ${
+                deletandoEmail === user.email
+                  ? 'bg-red-400 text-red-900 cursor-wait shadow-inner'
+                  : 'bg-red-600 text-white hover:bg-red-700 shadow-md'
+              }`}
+            >
+              {deletandoEmail === user.email ? 'Deletando...' : '🗑 Deletar'}
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
 
-function StatCard({ label, value, color }: { label: string; value: string; color: 'green' | 'yellow' | 'blue' }) {
+function StatCard({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: string;
+  color: 'green' | 'yellow' | 'blue';
+}) {
   const colorMap = {
     green: {
-      bg: 'bg-green-50',
-      text: 'text-green-700',
-      value: 'text-green-800',
+      bg: 'bg-green-100',
+      text: 'text-green-800',
+      value: 'text-green-900 font-extrabold text-xl',
     },
     yellow: {
-      bg: 'bg-yellow-50',
-      text: 'text-yellow-700',
-      value: 'text-yellow-800',
+      bg: 'bg-yellow-100',
+      text: 'text-yellow-800',
+      value: 'text-yellow-900 font-extrabold text-xl',
     },
     blue: {
-      bg: 'bg-blue-50',
-      text: 'text-blue-700',
-      value: 'text-blue-800',
+      bg: 'bg-blue-100',
+      text: 'text-blue-800',
+      value: 'text-blue-900 font-extrabold text-xl',
     },
   };
 
   return (
-    <div className={`${colorMap[color].bg} rounded-md p-2`}>
-      <p className={`text-xs font-semibold uppercase ${colorMap[color].text}`}>{label}</p>
-      <p className={`text-base font-bold ${colorMap[color].value}`}>{value}</p>
+    <div className={`${colorMap[color].bg} rounded-md p-4 shadow-sm`}>
+      <p className={`text-sm font-semibold uppercase ${colorMap[color].text} mb-1`}>
+        {label}
+      </p>
+      <p className={`${colorMap[color].value}`}>{value}</p>
     </div>
   );
 }
